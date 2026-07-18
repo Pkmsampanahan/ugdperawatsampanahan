@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="id" class="antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Sistem Presensi Perawat - Puskesmas Sampanahan</title>
+    
+    <meta name="theme-color" content="#0d9488">
+    
+    <!-- Memuat database konfigurasi terlebih dahulu -->
+    <script src="./db.js"></script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: {
+                        primary: { DEFAULT: '#0d9488', dark: '#0f766e' },
+                    },
+                    animation: {
+                        'shimmer': 'shimmer 2s infinite linear',
+                        'laser': 'laser 2s infinite ease-in-out',
+                    },
+                    keyframes: {
+                        shimmer: { '0%': { transform: 'translateX(-100%)' }, '100%': { transform: 'translateX(100%)' } },
+                        laser: { '0%, 100%': { top: '0%' }, '50%': { top: '100%' } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root { --sat: env(safe-area-inset-top); --sab: env(safe-area-inset-bottom); }
+        body { -webkit-user-select: none; user-select: none; overflow: hidden; }
+        
+        .glass-effect { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .bg-mesh { background: radial-gradient(at 0% 0%, #f0fdfa 0px, transparent 50%), radial-gradient(at 100% 0%, #f1f5f9 0px, transparent 50%); }
+        .dark .bg-mesh { background: radial-gradient(at 0% 0%, #042f2e 0px, transparent 50%), radial-gradient(at 100% 100%, #0f172a 0px, transparent 50%); }
+
+        .app-container { width: 100%; max-width: 480px; height: 100dvh; display: flex; flex-direction: column; position: relative; }
+        
+        #main-header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            width: 100%;
+            transition: all 0.4s ease;
+        }
+
+        .main-scroll { flex: 1; overflow-y: auto; scroll-behavior: smooth; padding-bottom: 140px; }
+        .main-scroll::-webkit-scrollbar { display: none; }
+
+        .rekap-wrapper { width: 100%; overflow-x: auto; border-radius: 1.5rem; position: relative; scroll-behavior: smooth; }
+        .rekap-table { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.7rem; }
+        .rekap-table th { padding: 12px 8px; text-align: center; font-weight: 800; border-bottom: 1px solid #e2e8f0; white-space: nowrap; background: #f8fafc; }
+        .dark .rekap-table th { background: #1e293b; border-bottom: 1px solid #334155; color: #f1f5f9; }
+        .rekap-table td { padding: 10px 4px; text-align: center; border-bottom: 1px solid #f1f5f9; font-weight: 700; color: #334155; }
+        .dark .rekap-table td { border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+        
+        .rekap-table tfoot td { background: #f1f5f9; font-weight: 900; color: #0d9488; border-top: 2px solid #0d9488; }
+        .dark .rekap-table tfoot td { background: #1e293b; color: #2dd4bf; border-top: 2px solid #0d9488; }
+
+        .sticky-left { 
+            position: sticky; 
+            left: 0; 
+            z-index: 40; 
+            min-width: 110px; 
+            max-width: 110px;
+            text-align: left !important; 
+            padding-left: 12px !important; 
+            border-right: 1px solid #e2e8f0; 
+            background: #ffffff !important;
+            box-shadow: 4px 0 8px rgba(0,0,0,0.05);
+        }
+        .dark .sticky-left { 
+            border-right: 1px solid #334155; 
+            background: #0f172a !important; 
+            box-shadow: 4px 0 8px rgba(0,0,0,0.3);
+        }
+        
+        .today-col { background: #0d948815 !important; border-left: 2px solid #0d9488; border-right: 2px solid #0d9488; }
+        .dark .today-col { background: #0d948825 !important; }
+
+        .sticky-right { 
+            position: sticky; 
+            right: 0; 
+            z-index: 30; 
+            min-width: 45px; 
+            font-weight: 900 !important; 
+            border-left: 1px solid #e2e8f0; 
+            background: #f8fafc !important;
+            box-shadow: -4px 0 8px rgba(0,0,0,0.05); 
+        }
+        .dark .sticky-right { 
+            border-left: 1px solid #334155; 
+            background: #1e293b !important; 
+        }
+        
+        .code-P { color: #0d9488 !important; background: #f0fdfa !important; }
+        .code-S { color: #d97706 !important; background: #fffbeb !important; }
+        .code-M { color: #2563eb !important; background: #eff6ff !important; }
+        
+        .schedule-content { max-height: none; overflow: visible; }
+        .laser-line { position: absolute; left: 0; right: 0; height: 3px; background: #22c55e; box-shadow: 0 0 15px #22c55e, 0 0 30px #22c55e; animation: laser 2.5s infinite linear; z-index: 10; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 transition-colors duration-500">
+
+<div id="loading-overlay" class="fixed inset-0 z-[5000] bg-white dark:bg-slate-950 flex flex-col items-center justify-center transition-opacity duration-500">
+    <div class="relative w-24 h-24">
+        <div class="absolute inset-0 border-4 border-teal-500/20 rounded-3xl"></div>
+        <div class="absolute inset-0 border-4 border-teal-500 border-t-transparent rounded-3xl animate-spin"></div>
+        <div class="absolute inset-4 bg-teal-500/10 rounded-2xl animate-pulse flex items-center justify-center text-2xl">🏥</div>
+    </div>
+    <div class="mt-8 overflow-hidden rounded-full w-48 h-1 bg-slate-100 dark:bg-slate-800 relative">
+        <div class="absolute inset-0 bg-gradient-to-r from-teal-500 to-emerald-400 animate-shimmer" style="width: 50%;"></div>
+    </div>
+    <p class="mt-4 text-[10px] font-black uppercase tracking-[0.4em] text-teal-600 animate-pulse">Menghubungkan</p>
+</div>
+
+<div class="fixed top-0 left-0 right-0 h-[var(--sat)] bg-teal-600 z-[1100]"></div>
+
+<div class="app-container mx-auto">
+    <header id="main-header" class="bg-teal-600 dark:bg-teal-900 px-6 pt-12 pb-6 rounded-b-[2.5rem] overflow-hidden shadow-xl">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl pointer-events-none"></div>
+        <div class="relative z-10 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-white/20 glass-effect rounded-2xl flex items-center justify-center text-xl shadow-lg border border-white/20">🏥</div>
+                <div>
+                    <p class="text-[8px] font-black text-teal-100 uppercase tracking-widest leading-none">UPTD PUSKESMAS SAMPANAHAN</p>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <p class="text-[10px] font-bold text-white uppercase tracking-tighter">Desa Sampanahan Hilir</p>
+                        <span id="app-version-badge" class="bg-teal-500 dark:bg-teal-800 text-white text-[7px] px-1.5 py-0.5 rounded font-black tracking-normal"></span>
+                    </div>
+                    <div class="mt-1 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span id="header-shift-name" class="text-[7px] font-black text-emerald-300 uppercase tracking-[0.2em]">Shift ---</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="text-right">
+                    <h2 id="time-display" class="text-lg font-black text-white tabular-nums tracking-tighter leading-none">00:00</h2>
+                    <p id="date-display" class="text-[7px] font-bold text-teal-200 uppercase tracking-widest opacity-80">---</p>
+                </div>
+                <button onclick="toggleDarkMode()" class="w-10 h-10 bg-white/10 glass-effect rounded-2xl flex items-center justify-center text-white border border-white/20 transition-transform active:scale-90">
+                    <span id="theme-icon">🌙</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <section id="profile-card" class="hidden px-6 mt-4 transition-all duration-500">
+        <div class="bg-white/80 dark:bg-slate-900/80 glass-effect p-6 rounded-[2.5rem] shadow-xl border border-white/20 dark:border-slate-800/50">
+            <div id="header-profile-section" class="flex items-start justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="relative group">
+                        <div id="nurse-initial" class="w-16 h-16 bg-teal-500 dark:bg-slate-800 text-white dark:text-teal-400 rounded-[1.8rem] flex items-center justify-center text-2xl font-black shadow-2xl border-4 border-white/20">?</div>
+                        <button onclick="logout()" id="btn-logout-header" class="absolute -bottom-1 -right-1 w-7 h-7 bg-rose-500 text-white rounded-xl border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        </button>
+                    </div>
+                    <div>
+                        <h1 id="user-greeting" class="text-lg font-extrabold text-slate-800 dark:text-white leading-tight uppercase tracking-tight">-</h1>
+                        <p id="nurse-full-name" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Sesi Aktif</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span id="user-jaga-status" class="hidden px-3 py-1 bg-teal-500 text-white text-[7px] font-black rounded-full uppercase tracking-widest animate-pulse shadow-lg">Sedang Jaga</span>
+                </div>
+            </div>
+            <div class="mt-6 flex items-center justify-between px-2">
+                <p class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Hadir Bulan Ini</p>
+                <div class="flex items-center gap-1.5 bg-teal-500/10 px-2.5 py-1 rounded-lg border border-teal-500/20">
+                    <span class="text-[7px] font-black text-teal-600 uppercase">Total:</span>
+                    <span id="stat-total-life" class="text-[9px] font-black text-teal-700 dark:text-teal-400">0</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="rekap-header-controls" class="hidden px-6 pt-6 space-y-4">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-black text-slate-800 dark:text-white tracking-tighter">Laporan</h2>
+                <p id="rekap-month-label" class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">---</p>
+            </div>
+            <button onclick="exportToExcel()" class="bg-slate-900 dark:bg-teal-600 text-white px-5 py-3 rounded-2xl shadow-xl active:scale-90 transition-all text-[10px] font-black uppercase tracking-widest">
+                Download Excel
+            </button>
+        </div>
+        <div class="bg-white/50 dark:bg-slate-900/50 glass-effect border border-white/20 dark:border-slate-800 p-2 rounded-2xl">
+            <select id="rekap-select-month" onchange="renderRekap()" class="w-full bg-transparent p-2 text-[10px] font-black uppercase tracking-widest outline-none dark:text-white appearance-none text-center"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3 pb-2">
+            <div class="relative">
+                <input type="text" id="rekap-search" oninput="renderRekap()" placeholder="Cari nama..." class="w-full bg-white/50 dark:bg-slate-900/50 glass-effect border border-white/20 dark:border-slate-800 p-3 rounded-2xl text-[10px] font-bold outline-none focus:ring-2 ring-teal-500/50 transition-all dark:text-white">
+            </div>
+            <div class="relative">
+                <select id="rekap-filter-shift" onchange="renderRekap()" class="w-full bg-white/50 dark:bg-slate-900/50 glass-effect border border-white/20 dark:border-slate-800 p-3 rounded-2xl text-[10px] font-black outline-none appearance-none dark:text-white">
+                    <option value="">Semua Shift</option>
+                    <option value="Pagi">Pagi (P)</option>
+                    <option value="Siang">Siang (S)</option>
+                    <option value="Malam">Malam (M)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-scroll bg-mesh" id="scroll-root">
+        <main id="view-home" class="px-6 mt-4 space-y-6">
+            <section id="card-auth" class="bg-white/80 dark:bg-slate-900/80 glass-effect p-8 rounded-[2.5rem] shadow-xl border border-white/20 dark:border-slate-800/50 text-center relative z-20">
+                <div class="w-16 h-16 bg-teal-500/10 dark:bg-teal-500/20 text-teal-600 rounded-[1.5rem] flex items-center justify-center text-4xl mx-auto mb-6 shadow-inner animate-bounce">🏥</div>
+                <h3 class="font-extrabold text-slate-800 dark:text-slate-100 text-sm uppercase tracking-widest mb-1">Verifikasi Akun</h3>
+                <div class="space-y-4">
+                    <select id="input-user" class="w-full bg-slate-50/50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 p-4 rounded-2xl text-xs font-black outline-none appearance-none text-center focus:border-teal-500 transition-all dark:text-white">
+                        <option value="">Memuat Daftar...</option>
+                    </select>
+                    <button onclick="handleLogin()" class="w-full bg-gradient-to-r from-teal-600 to-emerald-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-teal-500/30 transition-all active:scale-95">Masuk Sesi</button>
+                </div>
+            </section>
+            <div id="dashboard-content" class="hidden space-y-8">
+                <section class="pb-10">
+                    <div class="flex justify-between items-center mb-5 px-2">
+                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">📝 Log Absen Harian</h3>
+                        <div class="flex items-center gap-2 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                            <span class="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Live</span>
+                        </div>
+                    </div>
+                    <div id="live-log-container" class="space-y-3"></div>
+                </section>
+            </div>
+        </main>
+        <main id="view-rekap" class="hidden px-6 space-y-6 pt-2 pb-20">
+            <div class="rekap-wrapper bg-white/50 dark:bg-slate-900/50 glass-effect border border-white/20 dark:border-slate-800 shadow-2xl" id="rekap-scroll-container">
+                <div id="rekap-table-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <nav class="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto z-[2000] px-6 pb-[calc(1.5rem+var(--sab))] pt-4">
+        <div class="bg-white/70 dark:bg-slate-900/80 glass-effect border border-white/30 dark:border-slate-800/50 rounded-[2.5rem] p-3 flex items-center gap-4 shadow-xl">
+            <button onclick="showView('home')" id="nav-home" class="flex-1 py-4 flex flex-col items-center gap-1 rounded-[1.5rem] text-teal-600 bg-teal-500/10 transition-all">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                <span class="text-[8px] font-black uppercase tracking-widest">Beranda</span>
+            </button>
+            <button onclick="initiateScan()" class="bg-gradient-to-br from-teal-500 to-emerald-600 text-white p-6 rounded-[2rem] shadow-xl shadow-teal-500/40 -mt-16 border-4 border-white dark:border-slate-950 active:scale-90 transition-all">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+            </button>
+            <button onclick="showView('rekap')" id="nav-rekap" class="flex-1 py-4 flex flex-col items-center gap-1 rounded-[1.5rem] text-slate-400 transition-all">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <span class="text-[8px] font-black uppercase tracking-widest">Laporan</span>
+            </button>
+        </div>
+    </nav>
+</div>
+
+<div id="modal-scanner" class="fixed inset-0 z-[6000] hidden flex-col bg-black/90 backdrop-blur-2xl">
+    <div class="px-6 pt-12 pb-6 flex justify-between items-center text-white">
+        <div><h4 class="font-black text-lg tracking-tighter uppercase">Scan Presensi</h4><p class="text-[9px] text-teal-400 font-bold uppercase tracking-widest">Kamera Aktif</p></div>
+        <button onclick="closeScanner()" class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl">✕</button>
+    </div>
+    <div class="flex-1 flex flex-col items-center justify-center p-6"><div class="relative"><div id="qr-reader" class="w-[280px] h-[280px] bg-slate-950 rounded-[3rem] overflow-hidden border-4 border-white/20"></div><div class="laser-line"></div></div></div>
+</div>
+
+<div id="modal-success-presence" class="fixed inset-0 bg-white dark:bg-slate-950 z-[8000] hidden flex-col items-center justify-center text-center p-10">
+    <div class="w-32 h-32 bg-teal-500/10 text-teal-500 rounded-[2.5rem] flex items-center justify-center text-6xl mb-8 animate-bounce">✅</div>
+    <h2 class="text-3xl font-black text-slate-800 dark:text-white uppercase tracking-tighter">Berhasil!</h2>
+    <p id="success-nurse-name" class="text-xl font-bold text-teal-600 mt-3 uppercase tracking-widest"></p>
+    <div class="mt-10 w-full max-w-xs bg-slate-50 dark:bg-slate-900 p-8 rounded-[3rem] border border-slate-100 dark:border-slate-800">
+        <p id="success-time" class="text-4xl font-black text-slate-800 dark:text-white tabular-nums tracking-tighter">00:00</p>
+        <p id="success-shift" class="text-[10px] font-bold text-slate-400 uppercase mt-2 tracking-[0.2em]">---</p>
+    </div>
+    <button onclick="location.reload()" class="mt-12 w-full max-w-xs bg-slate-900 dark:bg-teal-600 text-white py-5 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.3em] active:scale-95 shadow-xl transition-all">Kembali</button>
+</div>
+
+<div id="alert-box" class="fixed top-8 left-6 right-6 z-[7000] transition-all duration-500 translate-y-[-150%] opacity-0 pointer-events-none">
+    <div class="bg-white/90 dark:bg-slate-900/90 glass-effect p-4 rounded-3xl shadow-2xl flex items-center gap-4 border border-white/20 dark:border-slate-800">
+        <div id="alert-icon-bg" class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl">🔔</div>
+        <div class="flex-1"><h4 id="alert-title" class="text-[10px] font-black uppercase tracking-widest dark:text-white">Notifikasi</h4><p id="alert-msg" class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5"></p></div>
+    </div>
+</div>
+
+<script>
+    let state = {
+        user: localStorage.getItem('nurse_session_name') || null,
+        data: { officers: [], logs: [], schedule: {}, config: { voice: true, popup: true } },
+        darkMode: localStorage.getItem('theme') === 'dark',
+        scanner: null,
+        audioContext: null
+    };
+
+    function initAudio() { if (!state.audioContext) state.audioContext = new (window.AudioContext || window.webkitAudioContext)(); }
+    function playSfx(type) {
+        try {
+            initAudio(); const ctx = state.audioContext; const osc = ctx.createOscillator(); const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination); const now = ctx.currentTime;
+            if (type === 'ping') {
+                osc.frequency.setValueAtTime(880, now); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
+            } else if (type === 'error') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(220, now); gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'success') {
+                [523.25, 659.25, 783.99].forEach((f, i) => {
+                    const o = ctx.createOscillator(); const g = ctx.createGain(); o.connect(g); g.connect(ctx.destination);
+                    o.frequency.setValueAtTime(f, now + (i * 0.1)); g.gain.setValueAtTime(0.05, now + (i * 0.1)); g.gain.exponentialRampToValueAtTime(0.01, now + (i * 0.1) + 0.3);
+                    o.start(now + (i * 0.1)); o.stop(now + (i * 0.1) + 0.3);
+                });
+            }
+        } catch (e) {}
+    }
+    function triggerHaptic(t = 20) { if (navigator.vibrate) navigator.vibrate(t); }
+
+    function populateMonthSelector() {
+        const sel = document.getElementById('rekap-select-month');
+        if (!sel || sel.options.length > 0) return;
+        const now = new Date();
+        for (let i = 0; i < 12; i++) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const opt = document.createElement('option');
+            opt.value = `${d.getMonth()}-${d.getFullYear()}`;
+            opt.innerText = `${CONFIG.MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+            sel.appendChild(opt);
+        }
+    }
+
+    function showView(v) {
+        triggerHaptic(15);
+        document.getElementById('view-home').classList.toggle('hidden', v !== 'home');
+        document.getElementById('view-rekap').classList.toggle('hidden', v !== 'rekap');
+        const profile = document.getElementById('profile-card');
+        const rekapHeader = document.getElementById('rekap-header-controls');
+        if (state.user && v === 'home') profile.classList.remove('hidden');
+        else profile.classList.add('hidden');
+        if (v === 'rekap') {
+            rekapHeader.classList.remove('hidden');
+            populateMonthSelector();
+            renderRekap();
+            setTimeout(scrollToToday, 300);
+        } else {
+            rekapHeader.classList.add('hidden');
+        }
+        const navHome = document.getElementById('nav-home');
+        const navRekap = document.getElementById('nav-rekap');
+        if (v === 'home') {
+            navHome.className = 'flex-1 py-4 flex flex-col items-center gap-1 rounded-[1.5rem] text-teal-600 bg-teal-500/10 transition-all';
+            navRekap.className = 'flex-1 py-4 flex flex-col items-center gap-1 rounded-[1.5rem] text-slate-400 transition-all';
+        } else {
+            navHome.className = 'flex-1 py-4 flex flex-col items-center gap-1 rounded-[1.5rem] text-slate-400 transition-all';
+            navRekap.className = 'flex-1 py-4 flex flex-col items-center gap-1 rounded-[1.5rem] text-teal-600 bg-teal-500/10 transition-all';
+        }
+    }
+
+    function scrollToToday() {
+        const sel = document.getElementById('rekap-select-month');
+        if(!sel || !sel.value) return;
+        const [m, y] = sel.value.split('-').map(Number);
+        const now = new Date();
+        if (m === now.getMonth() && y === now.getFullYear()) {
+            const todayCell = document.querySelector('.today-col');
+            const wrapper = document.getElementById('rekap-scroll-container');
+            if (wrapper && todayCell) wrapper.scrollLeft = todayCell.offsetLeft - (wrapper.clientWidth / 2);
+        }
+    }
+
+    function showAlert(title, msg, type = 'success') {
+        const box = document.getElementById('alert-box');
+        const iconBg = document.getElementById('alert-icon-bg');
+        document.getElementById('alert-title').innerText = title;
+        document.getElementById('alert-msg').innerText = msg;
+        if(type === 'success') {
+            iconBg.className = "w-12 h-12 rounded-2xl flex items-center justify-center text-xl bg-teal-500/10 text-teal-600"; iconBg.innerText = '🔔';
+            playSfx('ping'); triggerHaptic(30);
+        } else {
+            iconBg.className = "w-12 h-12 rounded-2xl flex items-center justify-center text-xl bg-rose-500/10 text-rose-500"; iconBg.innerText = '⚠️';
+            playSfx('error'); triggerHaptic(100);
+        }
+        box.style.transform = 'translateY(0)'; box.style.opacity = '1';
+        setTimeout(() => { box.style.transform = 'translateY(-150%)'; box.style.opacity = '0'; }, 3000);
+    }
+
+    function toggleDarkMode() {
+        triggerHaptic(20);
+        state.darkMode = !state.darkMode; localStorage.setItem('theme', state.darkMode ? 'dark' : 'light');
+        document.documentElement.classList.toggle('dark', state.darkMode);
+        document.getElementById('theme-icon').innerText = state.darkMode ? '☀️' : '🌙';
+    }
+
+    async function fetchData(silent = false) {
+        try {
+            const resp = await fetch(`${CONFIG.WEB_APP_URL}?action=getData`);
+            const json = await resp.json();
+            state.data = json;
+            renderDashboard();
+            if (!document.getElementById('view-rekap').classList.contains('hidden')) renderRekap();
+        } catch (e) { if(!silent) showAlert("Error", "Gagal sinkron database", "error"); }
+        finally { document.getElementById('loading-overlay').classList.add('hidden'); }
+    }
+
+    function handleLogin() {
+        const val = document.getElementById('input-user').value;
+        if (!val) return showAlert("Peringatan", "Pilih nama perawat!", "error");
+        state.user = val; localStorage.setItem('nurse_session_name', val);
+        showAlert("Berhasil", `Sesi ${val} aktif`); 
+        renderDashboard();
+    }
+
+    function logout() { 
+        if(!confirm("Logout dari sesi ini?")) return;
+        state.user = null; localStorage.removeItem('nurse_session_name'); renderDashboard(); 
+    }
+
+    function getShiftInfo() {
+        const hr = new Date().getHours();
+        if (hr >= 8 && hr < 14) return { label: 'Pagi', code: 'P' };
+        if (hr >= 14 && hr < 20) return { label: 'Siang', code: 'S' };
+        return { label: 'Malam', code: 'M' };
+    }
+
+    function getLogicalDate() {
+        const d = new Date(); if (d.getHours() < 8) d.setDate(d.getDate() - 1);
+        return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\./g, '/');
+    }
+
+    function getCurrentTimeString() {
+        return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    function renderDashboard() {
+        const info = getShiftInfo(); const logicalDate = getLogicalDate();
+        document.getElementById('user-greeting').innerText = state.user || "-";
+        document.getElementById('card-auth').classList.toggle('hidden', !!state.user);
+        document.getElementById('dashboard-content').classList.toggle('hidden', !state.user);
+        document.getElementById('header-shift-name').innerText = `Shift ${info.label}`;
+        const sel = document.getElementById('input-user');
+        if (sel.options.length <= 1 && state.data.officers.length > 0) {
+            sel.innerHTML = `<option value="">-- Pilih Akun --</option>` + state.data.officers.map(o => `<option value="${o}">${o}</option>`).join('');
+        }
+        if(state.user) {
+            document.getElementById('nurse-full-name').innerText = `${state.user} (${CONFIG.VERSION})`;
+            document.getElementById('nurse-initial').innerText = state.user.charAt(0);
+            const [d, m, y] = logicalDate.split('/');
+            const monthKey = `/${m}/${y}`;
+            const monthlyLogs = state.data.logs.filter(l => l.name === state.user && l.date.includes(monthKey));
+            document.getElementById('stat-total-life').innerText = monthlyLogs.length;
+            const statusBadge = document.getElementById('user-jaga-status');
+            const todayLogs = state.data.logs.filter(l => l.name === state.user && l.date === logicalDate);
+            if(todayLogs.some(l => l.shift === info.label)) {
+                statusBadge.innerText = "Sedang Jaga";
+                statusBadge.className = "px-3 py-1 bg-teal-500 text-white text-[7px] font-black rounded-full uppercase tracking-widest animate-pulse shadow-lg";
+                statusBadge.classList.remove('hidden');
+            } else if(todayLogs.length > 0) {
+                statusBadge.innerText = "Selesai Jaga";
+                statusBadge.className = "px-3 py-1 bg-slate-400 text-white text-[7px] font-black rounded-full uppercase tracking-widest shadow-lg";
+                statusBadge.classList.remove('hidden');
+            } else { statusBadge.classList.add('hidden'); }
+        }
+        const lToday = state.data.logs.filter(l => l.date === logicalDate).sort((a, b) => b.time.localeCompare(a.time));
+        document.getElementById('live-log-container').innerHTML = lToday.length ? lToday.map(l => `
+            <div class="bg-white/40 dark:bg-slate-900/40 glass-effect p-4 rounded-[1.5rem] border border-white/20 dark:border-slate-800 flex items-center gap-4">
+                <div class="w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-xl flex items-center justify-center font-black text-xs uppercase">${l.name.charAt(0)}</div>
+                <div class="flex-1">
+                    <p class="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight">${l.name}</p>
+                    <p class="text-[8px] font-bold text-slate-400 uppercase tracking-widest">${l.time} • Shift ${l.shift}</p>
+                </div>
+                <div class="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 px-3 py-1.5 rounded-xl text-[7px] font-black uppercase border">Masuk</div>
+            </div>`).join('') : '<div class="text-center py-10 opacity-30 text-[9px] font-black uppercase tracking-widest dark:text-white">Belum Ada Absen</div>';
+    }
+
+    function renderRekap() {
+        const sel = document.getElementById('rekap-select-month');
+        if(!sel.value) return;
+        const [month, year] = sel.value.split('-').map(Number);
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const search = document.getElementById('rekap-search').value.toLowerCase();
+        const filterShift = document.getElementById('rekap-filter-shift').value;
+        const now = new Date();
+        const isCurrentMonth = (now.getMonth() === month && now.getFullYear() === year);
+        document.getElementById('rekap-month-label').innerText = `${CONFIG.MONTHS[month]} ${year}`;
+        
+        let html = `<table class="rekap-table" id="table-to-export"><thead><tr><th class="sticky-left">Nama Perawat</th>`;
+        for(let i=1; i<=daysInMonth; i++) html += `<th class="${isCurrentMonth && i === now.getDate() ? 'today-col' : ''}">${i}</th>`;
+        html += `<th class="sticky-right">TOT</th></tr></thead><tbody>`;
+        
+        const dailyTotals = new Array(daysInMonth + 1).fill(0);
+        let grandTotal = 0;
+        const filteredOfficers = state.data.officers.filter(o => o.toLowerCase().includes(search)).sort();
+        
+        filteredOfficers.forEach(name => {
+            let rowTotal = 0;
+            let cells = "";
+            let hasDataInRow = false;
+            
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${d.toString().padStart(2,'0')}/${(month+1).toString().padStart(2,'0')}/${year}`;
+                const log = state.data.logs.find(l => l.name === name && l.date === dateStr);
+                let char = '-', css = 'opacity-20';
+                
+                if(log) {
+                    if(!filterShift || log.shift === filterShift) {
+                        char = log.shift.charAt(0);
+                        css = `code-${char}`;
+                        rowTotal++;
+                        hasDataInRow = true;
+                    }
+                }
+                cells += `<td class="${css} ${isCurrentMonth && d === now.getDate() ? 'today-col' : ''}">${char}</td>`;
+            }
+            
+            if(!filterShift || hasDataInRow) {
+                html += `<tr><td class="sticky-left uppercase font-black">${name}</td>${cells}<td class="sticky-right">${rowTotal}</td></tr>`;
+                for(let d=1; d<=daysInMonth; d++) {
+                    const dateStr = `${d.toString().padStart(2,'0')}/${(month+1).toString().padStart(2,'0')}/${year}`;
+                    const log = state.data.logs.find(l => l.name === name && l.date === dateStr);
+                    if(log && (!filterShift || log.shift === filterShift)) {
+                        dailyTotals[d]++;
+                        grandTotal++;
+                    }
+                }
+            }
+        });
+        
+        html += `</tbody><tfoot><tr><td class="sticky-left">TOTAL</td>`;
+        for(let d=1; d<=daysInMonth; d++) html += `<td class="${isCurrentMonth && d === now.getDate() ? 'today-col' : ''}">${dailyTotals[d] || ''}</td>`;
+        html += `<td class="sticky-right">${grandTotal}</td></tr></tfoot></table>`;
+        document.getElementById('rekap-table-container').innerHTML = html;
+    }
+
+    async function initiateScan() {
+        if (!state.user) return showAlert("Akses Ditolak", "Pilih akun perawat dulu", "error");
+        const shift = getShiftInfo(); const lDate = getLogicalDate();
+        if (state.data.logs.some(l => l.name === state.user && l.date === lDate && l.shift === shift.label)) {
+            return showAlert("Info", `Shift ${shift.label} sudah diabsen`, "error");
+        }
+        document.getElementById('modal-scanner').classList.remove('hidden');
+        state.scanner = new Html5Qrcode("qr-reader");
+        try {
+            await state.scanner.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (txt) => {
+                if (txt === (state.data.config.qrData || CONFIG.DEFAULT_QR)) {
+                    state.scanner.stop().then(() => {
+                        document.getElementById('modal-scanner').classList.add('hidden');
+                        processScan();
+                    }).catch(() => {
+                        document.getElementById('modal-scanner').classList.add('hidden');
+                        processScan();
+                    });
+                } else { showAlert("QR Gagal", "QR Code tidak valid", "error"); }
+            });
+        } catch (e) { showAlert("Error", "Gagal akses kamera", "error"); closeScanner(); }
+    }
+
+    async function processScan() {
+        document.getElementById('loading-overlay').classList.remove('hidden');
+        const payload = { name: state.user, date: getLogicalDate(), shift: getShiftInfo().label, time: getCurrentTimeString() };
+        try {
+            const resp = await fetch(CONFIG.WEB_APP_URL, { 
+                method: 'POST', 
+                mode: 'cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'saveScan', payload }) 
+            });
+            const res = await resp.json();
+            if (res.status === 'success') {
+                playSfx('success');
+                document.getElementById('success-nurse-name').innerText = state.user;
+                document.getElementById('success-time').innerText = payload.time;
+                document.getElementById('success-shift').innerText = `SHIFT ${payload.shift.toUpperCase()}`;
+                document.getElementById('modal-success-presence').classList.remove('hidden');
+                fetchData(true);
+            } else showAlert("Gagal", res.message, "error");
+        } catch (e) { showAlert("Koneksi", "Server tidak merespon", "error"); }
+        finally { document.getElementById('loading-overlay').classList.add('hidden'); }
+    }
+
+    function exportToExcel() {
+        try {
+            const table = document.getElementById('table-to-export');
+            if (!table) return showAlert("Gagal", "Data kosong", "error");
+            const monthLabel = document.getElementById('rekap-month-label').innerText;
+            const wb = XLSX.utils.table_to_book(table);
+            XLSX.writeFile(wb, `Presensi_Sampanahan_${monthLabel.replace(/\s/g, '_')}.xlsx`);
+        } catch(e) { showAlert("Error", "Gagal export file", "error"); }
+    }
+
+    function closeScanner() { 
+        if(state.scanner) {
+            state.scanner.stop().catch(() => {});
+            state.scanner = null;
+        }
+        document.getElementById('modal-scanner').classList.add('hidden'); 
+    }
+
+    window.onload = () => {
+        document.documentElement.classList.toggle('dark', state.darkMode);
+        document.getElementById('theme-icon').innerText = state.darkMode ? '☀️' : '🌙';
+        
+        // Render Versi Aplikasi ke UI Badge
+        document.getElementById('app-version-badge').innerText = CONFIG.VERSION;
+        
+        fetchData();
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('time-display').innerText = getCurrentTimeString();
+            document.getElementById('date-display').innerText = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        }, 1000);
+        setInterval(() => fetchData(true), 60000);
+
+        // Skrip PWA Auto Update terintegrasi penuh
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+            .then(reg => {
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            showAlert("Update Berhasil", "Aplikasi diperbarui ke versi baru!", "success");
+                            setTimeout(() => { location.reload(); }, 1500);
+                        }
+                    });
+                });
+            })
+            .catch(err => console.error("Service Worker Error:", err));
+        }
+    };
+</script>
+</body>
+</html>
