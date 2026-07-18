@@ -121,7 +121,7 @@
     <div class="relative w-24 h-24">
         <div class="absolute inset-0 border-4 border-teal-500/20 rounded-3xl"></div>
         <div class="absolute inset-0 border-4 border-teal-500 border-t-transparent rounded-3xl animate-spin"></div>
-        <div class="absolute inset-4 bg-teal-500/10 rounded-2xl animate-pulse flex items-center justify-center text-2xl">🏥</div>
+        <div class="absolute inset-4 bg-teal-500/10 rounded-2xl animate-pulse flex items-center justify-center text-2xl"></div>
     </div>
     <div class="mt-8 overflow-hidden rounded-full w-48 h-1 bg-slate-100 dark:bg-slate-800 relative">
         <div class="absolute inset-0 bg-gradient-to-r from-teal-500 to-emerald-400 animate-shimmer" style="width: 50%;"></div>
@@ -136,12 +136,12 @@
         <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl pointer-events-none"></div>
         <div class="relative z-10 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-white/20 glass-effect rounded-2xl flex items-center justify-center text-xl shadow-lg border border-white/20">🏥</div>
+                <div class="w-10 h-10 bg-white/20 glass-effect rounded-2xl flex items-center justify-center text-xl shadow-lg border border-white/20"></div>
                 <div>
                     <p class="text-[8px] font-black text-teal-100 uppercase tracking-widest leading-none">UPTD PUSKESMAS SAMPANAHAN</p>
                     <div class="flex items-center gap-2 mt-0.5">
                         <p class="text-[10px] font-bold text-white uppercase tracking-tighter">Desa Sampanahan Hilir</p>
-                        <span id="app-version-badge" class="bg-teal-500 dark:bg-teal-800 text-white text-[7px] px-1.5 py-0.5 rounded font-black tracking-normal"></span>
+                        <span id="app-version-badge" class="bg-teal-500 dark:bg-teal-800 text-white text-[7px] px-1.5 py-0.5 rounded font-black tracking-normal">---</span>
                     </div>
                     <div class="mt-1 flex items-center gap-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -155,7 +155,7 @@
                     <p id="date-display" class="text-[7px] font-bold text-teal-200 uppercase tracking-widest opacity-80">---</p>
                 </div>
                 <button onclick="toggleDarkMode()" class="w-10 h-10 bg-white/10 glass-effect rounded-2xl flex items-center justify-center text-white border border-white/20 transition-transform active:scale-90">
-                    <span id="theme-icon">🌙</span>
+                    <span id="theme-icon"></span>
                 </button>
             </div>
         </div>
@@ -164,21 +164,21 @@
     <section id="profile-card" class="hidden px-6 mt-4 transition-all duration-500">
         <div class="bg-white/80 dark:bg-slate-900/80 glass-effect p-6 rounded-[2.5rem] shadow-xl border border-white/20 dark:border-slate-800/50">
             <div id="header-profile-section" class="flex items-start justify-between gap-4">
-                <div class="flex items-center gap-4">
-                    <div class="relative group">
+                <div class="flex items-center gap-4 flex-1 min-w-0">
+                    <div class="relative group flex-shrink-0">
                         <div id="nurse-initial" class="w-16 h-16 bg-teal-500 dark:bg-slate-800 text-white dark:text-teal-400 rounded-[1.8rem] flex items-center justify-center text-2xl font-black shadow-2xl border-4 border-white/20">?</div>
-                        <button onclick="logout()" id="btn-logout-header" class="absolute -bottom-1 -right-1 w-7 h-7 bg-rose-500 text-white rounded-xl border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+                        <button onclick="logout()" id="btn-logout-header" class="absolute -bottom-1 -right-1 w-7 h-7 bg-rose-500 text-white rounded-xl border-2 border-white dark:border-slate-950 flex items-center justify-center shadow-lg active:scale-90 transition-transform">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                         </button>
                     </div>
-                    <div>
-                        <h1 id="user-greeting" class="text-lg font-extrabold text-slate-800 dark:text-white leading-tight uppercase tracking-tight">-</h1>
-                        <!-- Tambah Komponen UI NIP/NRPK Baru -->
-                        <p id="user-nip" class="text-[10px] font-semibold text-teal-600 dark:text-teal-400 mt-0.5 tracking-tight">-</p>
-                        <p id="nurse-full-name" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Sesi Aktif</p>
+                    <div class="min-w-0 flex-1">
+                        <!-- Perbaikan Visual Nama Panjang Halaman Profil Beranda -->
+                        <h1 id="user-greeting" class="text-sm font-black text-slate-800 dark:text-white leading-tight uppercase tracking-tight max-w-[210px] break-words line-clamp-2">-</h1>
+                        <p id="user-nip" class="text-[9px] font-bold text-teal-600 dark:text-teal-400 mt-1 tracking-tight truncate">-</p>
+                        <p id="nurse-full-name" class="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Sesi Aktif</p>
                     </div>
                 </div>
-                <div class="text-right">
+                <div class="text-right flex-shrink-0 flex flex-col gap-1">
                     <span id="user-jaga-status" class="hidden px-3 py-1 bg-teal-500 text-white text-[7px] font-black rounded-full uppercase tracking-widest animate-pulse shadow-lg">Sedang Jaga</span>
                 </div>
             </div>
@@ -223,7 +223,7 @@
     <div class="main-scroll bg-mesh" id="scroll-root">
         <main id="view-home" class="px-6 mt-4 space-y-6">
             <section id="card-auth" class="bg-white/80 dark:bg-slate-900/80 glass-effect p-8 rounded-[2.5rem] shadow-xl border border-white/20 dark:border-slate-800/50 text-center relative z-20">
-                <div class="w-16 h-16 bg-teal-500/10 dark:bg-teal-500/20 text-teal-600 rounded-[1.5rem] flex items-center justify-center text-4xl mx-auto mb-6 shadow-inner animate-bounce">🏥</div>
+                <div class="w-16 h-16 bg-teal-500/10 dark:bg-teal-500/20 text-teal-600 rounded-[1.5rem] flex items-center justify-center text-4xl mx-auto mb-6 shadow-inner animate-bounce"></div>
                 <h3 class="font-extrabold text-slate-800 dark:text-slate-100 text-sm uppercase tracking-widest mb-1">Verifikasi Akun</h3>
                 <div class="space-y-4">
                     <select id="input-user" class="w-full bg-slate-50/50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 p-4 rounded-2xl text-xs font-black outline-none appearance-none text-center focus:border-teal-500 transition-all dark:text-white">
@@ -235,7 +235,7 @@
             <div id="dashboard-content" class="hidden space-y-8">
                 <section class="pb-10">
                     <div class="flex justify-between items-center mb-5 px-2">
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">📝 Log Absen Harian</h3>
+                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500"> Log Absen Harian</h3>
                         <div class="flex items-center gap-2 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
                             <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
                             <span class="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Live</span>
@@ -272,13 +272,13 @@
 <div id="modal-scanner" class="fixed inset-0 z-[6000] hidden flex-col bg-black/90 backdrop-blur-2xl">
     <div class="px-6 pt-12 pb-6 flex justify-between items-center text-white">
         <div><h4 class="font-black text-lg tracking-tighter uppercase">Scan Presensi</h4><p class="text-[9px] text-teal-400 font-bold uppercase tracking-widest">Kamera Aktif</p></div>
-        <button onclick="closeScanner()" class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl">✕</button>
+        <button onclick="closeScanner()" class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl"></button>
     </div>
     <div class="flex-1 flex flex-col items-center justify-center p-6"><div class="relative"><div id="qr-reader" class="w-[280px] h-[280px] bg-slate-950 rounded-[3rem] overflow-hidden border-4 border-white/20"></div><div class="laser-line"></div></div></div>
 </div>
 
 <div id="modal-success-presence" class="fixed inset-0 bg-white dark:bg-slate-950 z-[8000] hidden flex-col items-center justify-center text-center p-10">
-    <div class="w-32 h-32 bg-teal-500/10 text-teal-500 rounded-[2.5rem] flex items-center justify-center text-6xl mb-8 animate-bounce">✅</div>
+    <div class="w-32 h-32 bg-teal-500/10 text-teal-500 rounded-[2.5rem] flex items-center justify-center text-6xl mb-8 animate-bounce"></div>
     <h2 class="text-3xl font-black text-slate-800 dark:text-white uppercase tracking-tighter">Berhasil!</h2>
     <p id="success-nurse-name" class="text-xl font-bold text-teal-600 mt-3 uppercase tracking-widest"></p>
     <div class="mt-10 w-full max-w-xs bg-slate-50 dark:bg-slate-900 p-8 rounded-[3rem] border border-slate-100 dark:border-slate-800">
@@ -290,7 +290,7 @@
 
 <div id="alert-box" class="fixed top-8 left-6 right-6 z-[7000] transition-all duration-500 translate-y-[-150%] opacity-0 pointer-events-none">
     <div class="bg-white/90 dark:bg-slate-900/90 glass-effect p-4 rounded-3xl shadow-2xl flex items-center gap-4 border border-white/20 dark:border-slate-800">
-        <div id="alert-icon-bg" class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl">🔔</div>
+        <div id="alert-icon-bg" class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl"></div>
         <div class="flex-1"><h4 id="alert-title" class="text-[10px] font-black uppercase tracking-widest dark:text-white">Notifikasi</h4><p id="alert-msg" class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5"></p></div>
     </div>
 </div>
@@ -366,6 +366,12 @@
         }
     }
 
+    function autoCheckPWAUpdate(reg) {
+        setInterval(() => {
+            reg.update();
+        }, 300000); 
+    }
+
     function scrollToToday() {
         const sel = document.getElementById('rekap-select-month');
         if(!sel || !sel.value) return;
@@ -384,10 +390,10 @@
         document.getElementById('alert-title').innerText = title;
         document.getElementById('alert-msg').innerText = msg;
         if(type === 'success') {
-            iconBg.className = "w-12 h-12 rounded-2xl flex items-center justify-center text-xl bg-teal-500/10 text-teal-600"; iconBg.innerText = '🔔';
+            iconBg.className = "w-12 h-12 rounded-2xl flex items-center justify-center text-xl bg-teal-500/10 text-teal-600"; iconBg.innerText = '';
             playSfx('ping'); triggerHaptic(30);
         } else {
-            iconBg.className = "w-12 h-12 rounded-2xl flex items-center justify-center text-xl bg-rose-500/10 text-rose-500"; iconBg.innerText = '⚠️';
+            iconBg.className = "w-12 h-12 rounded-2xl flex items-center justify-center text-xl bg-rose-500/10 text-rose-500"; iconBg.innerText = '';
             playSfx('error'); triggerHaptic(100);
         }
         box.style.transform = 'translateY(0)'; box.style.opacity = '1';
@@ -398,7 +404,7 @@
         triggerHaptic(20);
         state.darkMode = !state.darkMode; localStorage.setItem('theme', state.darkMode ? 'dark' : 'light');
         document.documentElement.classList.toggle('dark', state.darkMode);
-        document.getElementById('theme-icon').innerText = state.darkMode ? '☀️' : '🌙';
+        document.getElementById('theme-icon').innerText = state.darkMode ? '' : '';
     }
 
     async function fetchData(silent = false) {
@@ -423,7 +429,7 @@
     function logout() { 
         if(!confirm("Logout dari sesi ini?")) return;
         state.user = null; localStorage.removeItem('nurse_session_name'); 
-        document.getElementById('user-nip').innerText = "-"; // Reset NIP saat logout
+        document.getElementById('user-nip').innerText = "-"; 
         renderDashboard(); 
     }
 
@@ -451,22 +457,23 @@
         document.getElementById('header-shift-name').innerText = `Shift ${info.label}`;
         const sel = document.getElementById('input-user');
         
-        // Perbaikan pembacaan dropdown terstruktur objek (Nama & NIP)
         if (sel.options.length <= 1 && state.data.officers.length > 0) {
             sel.innerHTML = `<option value="">-- Pilih Akun --</option>` + state.data.officers.map(o => `<option value="${o.name}">${o.name}</option>`).join('');
         }
         
         if(state.user) {
-            document.getElementById('nurse-full-name').innerText = `${state.user} (${CONFIG.VERSION})`;
-            document.getElementById('nurse-initial').innerText = state.user.charAt(0);
-            
-            // Pencarian & render NIP/NRPK dinamis ke UI Profil Beranda
             const currentOfficer = state.data.officers.find(o => o.name === state.user);
             if (currentOfficer) {
                 document.getElementById('user-nip').innerText = `NIP/NRPK: ${currentOfficer.nip}`;
             } else {
                 document.getElementById('user-nip').innerText = "-";
             }
+            
+            // PERBAIKAN: Memperbaiki deteksi kapital properti dinamis (config.version) dari server agar tidak undefined
+            const serverVersion = (state.data.config && state.data.config.version) ? state.data.config.version : "PWA";
+            document.getElementById('nurse-full-name').innerText = `Sesi Aktif`;
+            document.getElementById('app-version-badge').innerText = serverVersion;
+            document.getElementById('nurse-initial').innerText = state.user.charAt(0);
             
             const [d, m, y] = logicalDate.split('/');
             const monthKey = `/${m}/${y}`;
@@ -488,11 +495,11 @@
         document.getElementById('live-log-container').innerHTML = lToday.length ? lToday.map(l => `
             <div class="bg-white/40 dark:bg-slate-900/40 glass-effect p-4 rounded-[1.5rem] border border-white/20 dark:border-slate-800 flex items-center gap-4">
                 <div class="w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-xl flex items-center justify-center font-black text-xs uppercase">${l.name.charAt(0)}</div>
-                <div class="flex-1">
-                    <p class="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight">${l.name}</p>
-                    <p class="text-[8px] font-bold text-slate-400 uppercase tracking-widest">${l.time} • Shift ${l.shift}</p>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight truncate">${l.name}</p>
+                    <p class="text-[8px] font-bold text-slate-400 uppercase tracking-widest">${l.time} � Shift ${l.shift}</p>
                 </div>
-                <div class="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 px-3 py-1.5 rounded-xl text-[7px] font-black uppercase border">Masuk</div>
+                <div class="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 px-3 py-1.5 rounded-xl text-[7px] font-black uppercase border flex-shrink-0">Masuk</div>
             </div>`).join('') : '<div class="text-center py-10 opacity-30 text-[9px] font-black uppercase tracking-widest dark:text-white">Belum Ada Absen</div>';
     }
 
@@ -514,7 +521,6 @@
         const dailyTotals = new Array(daysInMonth + 1).fill(0);
         let grandTotal = 0;
         
-        // Penyesuaian pemetaan rekap berdasarkan array objek (.name)
         const filteredOfficers = state.data.officers.filter(o => o.name.toLowerCase().includes(search)).sort((a,b) => a.name.localeCompare(b.name));
         
         filteredOfficers.forEach(officer => {
@@ -540,7 +546,8 @@
             }
             
             if(!filterShift || hasDataInRow) {
-                html += `<tr><td class="sticky-left uppercase font-black">${name}</td>${cells}<td class="sticky-right">${rowTotal}</td></tr>`;
+                // PERBAIKAN: Menambahkan ukuran text-[9px], break-words, dan leading rapat agar nama perawat panjang memotong rapi di dalam tabel rekap
+                html += `<tr><td class="sticky-left uppercase font-black text-[9px] leading-tight break-words max-w-[110px]">${name}</td>${cells}<td class="sticky-right">${rowTotal}</td></tr>`;
                 for(let d=1; d<=daysInMonth; d++) {
                     const dateStr = `${d.toString().padStart(2,'0')}/${(month+1).toString().padStart(2,'0')}/${year}`;
                     const log = state.data.logs.find(l => l.name === name && l.date === dateStr);
@@ -624,10 +631,7 @@
 
     window.onload = () => {
         document.documentElement.classList.toggle('dark', state.darkMode);
-        document.getElementById('theme-icon').innerText = state.darkMode ? '☀️' : '🌙';
-        
-        // Render Versi Aplikasi ke UI Badge
-        document.getElementById('app-version-badge').innerText = CONFIG.VERSION;
+        document.getElementById('theme-icon').innerText = state.darkMode ? '' : '';
         
         fetchData();
         setInterval(() => {
@@ -637,15 +641,15 @@
         }, 1000);
         setInterval(() => fetchData(true), 60000);
 
-        // Skrip PWA Auto Update terintegrasi penuh
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
             .then(reg => {
+                autoCheckPWAUpdate(reg);
                 reg.addEventListener('updatefound', () => {
                     const newWorker = reg.installing;
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            showAlert("Update Berhasil", "Aplikasi diperbarui ke versi baru!", "success");
+                            showAlert("Update Berhasil", "Sistem diperbarui ke versi mutakhir!", "success");
                             setTimeout(() => { location.reload(); }, 1500);
                         }
                     });
