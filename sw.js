@@ -1,4 +1,4 @@
-const CACHE_NAME = 'absensi_ugd-v1.4.3'; 
+const CACHE_NAME = 'absensi_ugd_auto_v1'; 
 const ASSETS = [
   "./", 
   "./manifest.json", 
@@ -11,6 +11,7 @@ const ASSETS = [
   "https://cdn.tailwindcss.com"
 ]; 
 
+// Install & langsung aktifkan aset dasar
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE_NAME).then(c => c.addAll(ASSETS))
@@ -18,6 +19,7 @@ self.addEventListener('install', e => {
   self.skipWaiting();
 }); 
 
+// Bersihkan cache usang otomatis jika nama cache diganti
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys => Promise.all(
@@ -27,8 +29,20 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 }); 
 
+// STRATEGI NETWORK FIRST: Selalu ambil dari internet dulu, kalau offline baru ambil dari cache
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(res => res || fetch(e.request))
+    fetch(e.request)
+      .then(response => {
+        // Jika sukses dapet file baru dari internet, simpan salinannya ke cache
+        if (response && response.status === 200 && e.request.method === 'GET') {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(e.request, responseToCache);
+          });
+        }
+        return response;
+      })
+      .catch(() => caches.match(e.request).then(res => res)) // Jika internet mati/offline, gunakan cache lokal
   );
 });
