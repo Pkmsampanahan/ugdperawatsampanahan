@@ -173,6 +173,8 @@
                     </div>
                     <div>
                         <h1 id="user-greeting" class="text-lg font-extrabold text-slate-800 dark:text-white leading-tight uppercase tracking-tight">-</h1>
+                        <!-- Tambah Komponen UI NIP/NRPK Baru -->
+                        <p id="user-nip" class="text-[10px] font-semibold text-teal-600 dark:text-teal-400 mt-0.5 tracking-tight">-</p>
                         <p id="nurse-full-name" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Sesi Aktif</p>
                     </div>
                 </div>
@@ -420,7 +422,9 @@
 
     function logout() { 
         if(!confirm("Logout dari sesi ini?")) return;
-        state.user = null; localStorage.removeItem('nurse_session_name'); renderDashboard(); 
+        state.user = null; localStorage.removeItem('nurse_session_name'); 
+        document.getElementById('user-nip').innerText = "-"; // Reset NIP saat logout
+        renderDashboard(); 
     }
 
     function getShiftInfo() {
@@ -446,12 +450,24 @@
         document.getElementById('dashboard-content').classList.toggle('hidden', !state.user);
         document.getElementById('header-shift-name').innerText = `Shift ${info.label}`;
         const sel = document.getElementById('input-user');
+        
+        // Perbaikan pembacaan dropdown terstruktur objek (Nama & NIP)
         if (sel.options.length <= 1 && state.data.officers.length > 0) {
-            sel.innerHTML = `<option value="">-- Pilih Akun --</option>` + state.data.officers.map(o => `<option value="${o}">${o}</option>`).join('');
+            sel.innerHTML = `<option value="">-- Pilih Akun --</option>` + state.data.officers.map(o => `<option value="${o.name}">${o.name}</option>`).join('');
         }
+        
         if(state.user) {
             document.getElementById('nurse-full-name').innerText = `${state.user} (${CONFIG.VERSION})`;
             document.getElementById('nurse-initial').innerText = state.user.charAt(0);
+            
+            // Pencarian & render NIP/NRPK dinamis ke UI Profil Beranda
+            const currentOfficer = state.data.officers.find(o => o.name === state.user);
+            if (currentOfficer) {
+                document.getElementById('user-nip').innerText = `NIP/NRPK: ${currentOfficer.nip}`;
+            } else {
+                document.getElementById('user-nip').innerText = "-";
+            }
+            
             const [d, m, y] = logicalDate.split('/');
             const monthKey = `/${m}/${y}`;
             const monthlyLogs = state.data.logs.filter(l => l.name === state.user && l.date.includes(monthKey));
@@ -497,9 +513,12 @@
         
         const dailyTotals = new Array(daysInMonth + 1).fill(0);
         let grandTotal = 0;
-        const filteredOfficers = state.data.officers.filter(o => o.toLowerCase().includes(search)).sort();
         
-        filteredOfficers.forEach(name => {
+        // Penyesuaian pemetaan rekap berdasarkan array objek (.name)
+        const filteredOfficers = state.data.officers.filter(o => o.name.toLowerCase().includes(search)).sort((a,b) => a.name.localeCompare(b.name));
+        
+        filteredOfficers.forEach(officer => {
+            const name = officer.name;
             let rowTotal = 0;
             let cells = "";
             let hasDataInRow = false;
